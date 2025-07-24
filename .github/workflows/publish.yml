@@ -20,7 +20,7 @@ jobs:
       - name: Build repo2jupyterlite
         uses: yuvipanda/repo2jupyterlite-action@main
       - name: Upload generated site
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
