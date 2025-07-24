@@ -1,42 +1,54 @@
-name: Build and Publish jupyterlite page to GitHub Pages
+name: Build and Deploy JupyterLite Site
 
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - '*'
+      - main # Or your main branch
 
 jobs:
-  build:
+  build-lite:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Build repo2jupyterlite
-        uses: yuvipanda/repo2jupyterlite-action@main
-      - name: Upload generated site
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: ./dist
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-  publish:
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    permissions:
-      pages: write
-      id-token: write
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10' # Use a recent Python version compatible with JupyterLite
 
-    environment:
-      name: github-pages
-      url: ${{ steps.publish.outputs.page_url }}
+    - name: Install JupyterLite and jupyter-repo2jupyterlite
+      # Install the core JupyterLite package and the repo2jupyterlite tool
+      run: |
+        pip install jupyterlite
+        pip install jupyter-repo2jupyterlite
 
-    runs-on: ubuntu-latest
-    steps:
-      - name: Publish to GitHub Pages
-        id: publish
-        uses: actions/deploy-pages@v1
+    - name: Create jupyter_lite_config.json (or ensure it's in place)
+      # This step ensures the config file exists in the current working directory (repo root)
+      # You can replace this with a 'COPY' if you prefer to keep it in your repo
+      # For this specific issue, we'll use 'extra_ignore_contents' as suggested by the error
+      run: |
+        echo '{
+          "LiteBuildConfig": {
+            "extra_ignore_contents": [
+              "/.devcontainer",
+              "/.github",
+              "/.env"
+            ]
+          }
+        }' > jupyter_lite_config.json
+
+
+    - name: Build JupyterLite site
+      # Run jupyter-repo2jupyterlite to prepare contents, then jupyter lite build
+      # The --config jupyter_lite_config.json ensures your config is used.
+      # The --contents . tells jupyter lite build to process the current directory's contents.
+      run: |
+        jupyter-repo2jupyterlite convert --output-dir _output --config jupyter_lite_config.json
+        jupyter lite build --output-dir _output --config jupyter_lite_config.json --contents .
+
+    - name: Upload generated site artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+          path: ./_output # JupyterLite builds to _output by default
