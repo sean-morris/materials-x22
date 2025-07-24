@@ -1,9 +1,0 @@
-{
-  "LiteBuildConfig": {
-    "extra_ignore_contents": [
-      "/.devcontainer",
-      "/.github"
-      "/.env"
-    ]
-  }
-}
